@@ -79,6 +79,7 @@ def execute_cpp(code):
 
 
 def handler(event, context):
+    # Inputs from JSON
     language = event.get('language', 'python')
     code = event.get('code', '')
 
