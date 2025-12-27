@@ -1,8 +1,9 @@
-FROM public.ecr.aws/lambda/python:3.11
+FROM public.ecr.aws/lambda/python:3.9
 
 
 RUN yum update -y && yum install -y gcc-c++
 RUN yum install java-1.8.0-openjdk-devel -y
+RUN yum clean all
 
 # Copy requirements.txt
 COPY requirements.txt ${LAMBDA_TASK_ROOT}
