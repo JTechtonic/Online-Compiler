@@ -1,0 +1,19 @@
+https://youtu.be/Cm2J9ew8oVw?si=mbAmZwwBbZzoppUN
+https://www.reddit.com/r/docker/comments/1606huh/how_to_implement_web_based_compilerlike_leetcode/
+https://chatgpt.com/c/693a11d6-46f0-832e-b31b-e273688f196f
+
+// Creating Image Tutorial
+https://docs.aws.amazon.com/lambda/latest/dg/python-image.html
+
+// Correct Docker Image Creation Command
+docker buildx build --provenance=false --sbom=false -t compiler-app-docker .
+
+// DOWNLOAD AMAZON CLI ON DESKTOP
+
+// Creates a docker container under port 9000:8000
+docker run --platform linux/amd64 -p 9000:8080 compiler-app-docker:latest
+
+// Call this link for testing backend at local server
+http://localhost:9000/2015-03-31/functions/function/invocations
+
+// Install node module with npm i
