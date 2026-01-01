@@ -4,13 +4,14 @@ import Editor from '@monaco-editor/react';
 import { useEffect, useState } from 'react';
 
 function App() {
-	const [code, setCode] = useState("");
+	const [code, setCode] = useState("# Start Coding");
 	const [language, setLanguage] = useState("python"); // Default language
 
 	const submitCode = async () => {
 		// API logic goes in here
 		console.log(code);
-		try{
+		// Try to limit the number of API calls to amazon link because of free plan
+		/*try{
 			const answer = await fetch("https://1gah1dspf6.execute-api.us-east-1.amazonaws.com/production",{
 				headers: {
 					"Content-Type": "application/json",
@@ -30,7 +31,7 @@ function App() {
 		catch (e)
 		{
 			console.log(e.message);
-		}
+		}*/
   	};
 
 	return (
