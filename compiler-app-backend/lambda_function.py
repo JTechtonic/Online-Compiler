@@ -1,34 +1,67 @@
-import sys
+#import sys
 import subprocess
-import io
+#import io
+import uuid
+import os
+import tempfile, shutil
 
+TIMEOUT_LENGTH = 5
+
+# Old way is insecure since it uses base Python exec() command; this can lead to unrestricted user access
+# def execute_python(code):
+# 	# Executes python code and captures output
+# 	original_stdout = sys.stdout
+# 	sys.stdout = output_capture = io.StringIO()
+
+# 	try:
+# 		exec(code) # Use exec() to capture output
+# 		output = output_capture.getvalue()
+# 		print('out of the code', output)
+# 		return output
+# 	except Exception as e:
+# 		return str(e)
+# 	finally:
+# 		sys.stdout = original_stdout
 
 def execute_python(code):
-	# Executes python code and captures output
-	original_stdout = sys.stdout
-	sys.stdout = output_capture = io.StringIO()
-
 	try:
-		exec(code) # Use exec() to capture output
-		output = output_capture.getvalue()
-		print('out of the code', output)
-		return output
+		file_path = f"/tmp/{uuid.uuid4()}.py"
+		
+		with open(file_path, "w") as f:
+			f.write(code)
+
+		result = subprocess.run(
+			["python3", file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=TIMEOUT_LENGTH
+		)
+
+		return result.stdout.decode() + result.stderr.decode()
+
+	except subprocess.TimeoutExpired:
+		return "Execution timed out"
 	except Exception as e:
 		return str(e)
 	finally:
-		sys.stdout = original_stdout
+		try:
+			os.remove(file_path)
+		except:
+			pass
 
 
 def execute_java(code):
+	workdir = tempfile.mkdtemp(dir="/tmp")
 	try:
 		print('Received code: ', code)
 		# Create a temp java file
-		with open('/tmp/Main.java', 'w') as java_file:
+		src = os.path.join(workdir, "Main.java")
+		
+		# with open('/tmp/Main.java', 'w') as java_file:
+		with open(src, "w") as java_file:
 			java_file.write(code)
 
 		# Compile the Java source file
 		compiler_result = subprocess.run(
-			['javac', '/tmp/Main.java'], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+			# ['javac', '/tmp/Main.java'], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+			['javac', src], stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=workdir
 		)
 
 		print('Compilation result: ', compiler_result.returncode)
@@ -38,27 +71,37 @@ def execute_java(code):
 		
 		# Run the compiled Java code
 		run_result = subprocess.run(
-			['java', '-classpath', '/tmp', 'Main'], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+			# ['java', '-classpath', '/tmp', 'Main'], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+			['java', '-classpath', workdir, 'Main'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=TIMEOUT_LENGTH
 		)
 
 		print('Run result: ', run_result.returncode)
 		return run_result.stdout.decode()
+	except subprocess.TimeoutExpired:
+		return "Execution timed out"
 	except Exception as e:
 		return str(e)
+	finally:
+		shutil.rmtree(workdir, ignore_errors=True)
 
 
 def execute_cpp(code):
+	workdir = tempfile.mkdtemp(dir="/tmp")
 	try:
 		print('Received code:\n', code)
 
 		# Create temp c++ file
-		with open('/tmp/temp.cpp', 'w') as cpp_file:
+		src = os.path.join(workdir, "temp.cpp")
+		bin_path = os.path.join(workdir, "a.out")
+		
+		# with open('/tmp/temp.cpp', 'w') as cpp_file:
+		with open(src, "w") as cpp_file:
 			cpp_file.write(code)
 		
 		# Compile c++ file
 		compile_result = subprocess.run(
-			['g++', '/tmp/temp.cpp', '-o', '/tmp/temp'],
-			stdout=subprocess.PIPE, stderr=subprocess.PIPE
+			# ['g++', '/tmp/temp.cpp', '-o', '/tmp/temp'], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+			['g++', src, '-o', bin_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE
 		)
 
 		print('Compilation result: ', compile_result.returncode)
@@ -68,15 +111,18 @@ def execute_cpp(code):
 		
 		# Run compiled c++ code
 		run_result = subprocess.run(
-			['/tmp/temp'],
-			stdout=subprocess.PIPE, stderr=subprocess.PIPE
+			# ['/tmp/temp'], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+			[bin_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=TIMEOUT_LENGTH
 		)
 
 		print('Run result:', run_result.returncode)
 		return run_result.stdout.decode()
+	except subprocess.TimeoutExpired:
+		return "Execution timed out"
 	except Exception as e:
 		return str(e)
-
+	finally:
+		shutil.rmtree(workdir, ignore_errors=True)
 
 def handler(event, context):
 	# Inputs from JSON
@@ -95,9 +141,9 @@ def handler(event, context):
 	return {
 		"statusCode": 200,
 		"headers": {
-        	"Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "Content-Type",
-            "Access-Control-Allow-Methods": "OPTIONS,POST"
-        },
+			"Access-Control-Allow-Origin": "*",
+			"Access-Control-Allow-Headers": "Content-Type",
+			"Access-Control-Allow-Methods": "OPTIONS,POST"
+		},
 		"body": result
 	}
